@@ -44,7 +44,7 @@ class _SegmentedButtonState<T> extends State<SegmentedButton<T>> {
 
   @override
   Widget build(BuildContext context) {
-    return MyCustomMultiChildLayout(
+    return SizedCustomMultiChildLayout(
         delegate: SegmentedButtonDelegate(
           widget.tabs,
           height: widget.height,
@@ -84,11 +84,11 @@ class _SegmentedButtonState<T> extends State<SegmentedButton<T>> {
   }
 }
 
-class MyCustomMultiChildLayout extends MultiChildRenderObjectWidget {
+class SizedCustomMultiChildLayout extends MultiChildRenderObjectWidget {
   /// Creates a custom multi-child layout.
   ///
   /// The [delegate] argument must not be null.
-  MyCustomMultiChildLayout({
+  SizedCustomMultiChildLayout({
     super.key,
     required this.delegate,
     super.children,
@@ -114,26 +114,23 @@ class SegmentedButtonDelegate<T> extends CustomMultiChildLayoutDelegate {
   final double? height;
   SegmentedButtonDelegate(this.tabs, {this.height});
 
-  double get minHeight => height ?? 40;
-
-  var width = 0.0;
+  double get maxHeight => height ?? 40;
 
   @override
-  Size getSize(BoxConstraints constraints) {
-    return Size(width, minHeight);
-  }
-
-  @override
-  void performLayout(Size size) {
+  Size performLayout() {
+    var buttonSize = Size.zero;
     var offset = Offset.zero;
-    final constraints = BoxConstraints(minHeight: minHeight);
+    final constraints = BoxConstraints(minHeight: maxHeight);
+
     for (var tab in tabs) {
-      if (!hasChild(ValueKey(tab))) return;
-      final size = layoutChild(ValueKey(tab), constraints);
-      positionChild(ValueKey(tab), offset);
-      offset = Offset(offset.dx + size.width, offset.dy);
-      width += size.width;
+      if (hasChild(ValueKey(tab))) {
+        final size = layoutChild(ValueKey(tab), constraints);
+        positionChild(ValueKey(tab), offset);
+        offset = Offset(offset.dx + size.width, offset.dy);
+        buttonSize = Size(buttonSize.width + size.width, maxHeight);
+      }
     }
+    return buttonSize;
   }
 }
 
@@ -309,7 +306,7 @@ class SegmentedTagsStyle {
   });
 }
 
-class CustomMultiChildLayoutDelegate {
+abstract class CustomMultiChildLayoutDelegate {
   /// Creates a layout delegate.
   ///
   /// The layout will update whenever [relayout] notifies its listeners.
@@ -376,7 +373,7 @@ class CustomMultiChildLayoutDelegate {
   /// remain unchanged. Children initially have their position set to
   /// (0,0), i.e. the top left of the [RenderCustomMultiChildLayoutBox].
   void positionChild(Object childId, Offset offset) {
-    final RenderBox? child = _idToChild![childId];
+    final child = _idToChild![childId];
     assert(() {
       if (child == null) {
         throw FlutterError(
@@ -386,18 +383,17 @@ class CustomMultiChildLayoutDelegate {
       }
       return true;
     }());
-    final MultiChildLayoutParentData childParentData =
-        child!.parentData! as MultiChildLayoutParentData;
+    final childParentData = child!.parentData! as MultiChildLayoutParentData;
     childParentData.offset = offset;
   }
 
   DiagnosticsNode _debugDescribeChild(RenderBox child) {
-    final MultiChildLayoutParentData childParentData =
-        child.parentData! as MultiChildLayoutParentData;
+    final childParentData = child.parentData! as MultiChildLayoutParentData;
     return DiagnosticsProperty<RenderBox>('${childParentData.id}', child);
   }
 
-  void _callPerformLayout(Size size, RenderBox? firstChild) {
+  Size _callPerformLayout(RenderBox? firstChild) {
+    var buttonSize = Size.zero;
     // A particular layout delegate could be called reentrantly, e.g. if it used
     // by both a parent and a child. So, we must restore the _idToChild map when
     // we return.
@@ -414,8 +410,7 @@ class CustomMultiChildLayoutDelegate {
       _idToChild = <Object, RenderBox>{};
       RenderBox? child = firstChild;
       while (child != null) {
-        final MultiChildLayoutParentData childParentData =
-            child.parentData! as MultiChildLayoutParentData;
+        final childParentData = child.parentData! as MultiChildLayoutParentData;
         assert(() {
           if (childParentData.id == null) {
             throw FlutterError.fromParts(<DiagnosticsNode>[
@@ -433,7 +428,7 @@ class CustomMultiChildLayoutDelegate {
         }());
         child = childParentData.nextSibling;
       }
-      performLayout(size);
+      buttonSize = performLayout();
       assert(() {
         if (_debugChildrenNeedingLayout!.isNotEmpty) {
           throw FlutterError.fromParts(<DiagnosticsNode>[
@@ -457,6 +452,8 @@ class CustomMultiChildLayoutDelegate {
         return true;
       }());
     }
+
+    return buttonSize;
   }
 
   /// Override this method to return the size of this object given the
@@ -468,14 +465,14 @@ class CustomMultiChildLayoutDelegate {
   ///
   /// By default, attempts to size the box to the biggest size
   /// possible given the constraints.
-  Size getSize(BoxConstraints constraints) => constraints.biggest;
+  //Size getSize(BoxConstraints constraints) => constraints.biggest;
 
   /// Override this method to lay out and position all children given this
   /// widget's size.
   ///
   /// This method must call [layoutChild] for each child. It should also specify
   /// the final position of each child with [positionChild].
-  void performLayout(Size size) {}
+  Size performLayout();
 
   /// Override this method to return true when the children need to be
   /// laid out.
@@ -547,70 +544,8 @@ class RenderCustomMultiChildLayoutBox extends RenderBox
     super.detach();
   }
 
-  Size _getSize(BoxConstraints constraints) {
-    assert(constraints.debugAssertIsValid());
-    return constraints.constrain(_delegate.getSize(constraints));
-  }
-
-  // TODO(ianh): It's a bit dubious to be using the getSize function from the delegate to
-  // figure out the intrinsic dimensions. We really should either not support intrinsics,
-  // or we should expose intrinsic delegate callbacks and throw if they're not implemented.
-
   @override
-  double computeMinIntrinsicWidth(double height) {
-    final double width =
-        _getSize(BoxConstraints.tightForFinite(height: height)).width;
-    if (width.isFinite) {
-      return width;
-    }
-    return 0.0;
-  }
-
-  @override
-  double computeMaxIntrinsicWidth(double height) {
-    final double width =
-        _getSize(BoxConstraints.tightForFinite(height: height)).width;
-    if (width.isFinite) {
-      return width;
-    }
-    return 0.0;
-  }
-
-  @override
-  double computeMinIntrinsicHeight(double width) {
-    final double height =
-        _getSize(BoxConstraints.tightForFinite(width: width)).height;
-    if (height.isFinite) {
-      return height;
-    }
-    return 0.0;
-  }
-
-  @override
-  double computeMaxIntrinsicHeight(double width) {
-    final double height =
-        _getSize(BoxConstraints.tightForFinite(width: width)).height;
-    if (height.isFinite) {
-      return height;
-    }
-    return 0.0;
-  }
-
-  @override
-  Size computeDryLayout(BoxConstraints constraints) {
-    return _getSize(constraints);
-  }
-
-  @override
-  void performLayout() {
-    size = _getSize(constraints);
-    delegate._callPerformLayout(size, firstChild);
-    // ! HACKY WORKAROUND!!!
-    // ! This makes it possible to determine the total children's width
-    // TODO: understand why delegate.getSize had to be done before the
-    // todo: delegate.performLayout
-    size = _getSize(constraints);
-  }
+  void performLayout() => size = delegate._callPerformLayout(firstChild);
 
   @override
   void paint(PaintingContext context, Offset offset) {

@@ -30,22 +30,19 @@ class HomePage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              color: Colors.blue.withOpacity(.3),
-              child: SegmentedButton<String>(
-                tabs: const ["Team", "Work", "Play", "Family"],
-                onTap: (p0) {},
-                childBuilder: (tab, index, selected) {
-                  return Text(
-                    tab,
-                    style: TextStyle(
-                      color: selected ? Colors.orange : Colors.black,
-                      fontSize: 20,
-                    ),
-                  );
-                },
-                initialTabIndex: 0,
-              ),
+            SegmentedButton<String>(
+              tabs: const ["Team", "Work", "Play", "Family"],
+              onTap: (p0) {},
+              childBuilder: (tab, index, selected) {
+                return Text(
+                  tab,
+                  style: TextStyle(
+                    color: selected ? Colors.orange : Colors.black,
+                    fontSize: 20,
+                  ),
+                );
+              },
+              initialTabIndex: 0,
             )
           ],
         ),
