@@ -1,32 +1,10 @@
-library segmented_tabs;
+library segmented_button;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
-class ExampleSegmentedTabs extends StatelessWidget {
-  const ExampleSegmentedTabs({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return SegmentedTabs<String>(
-      tabs: const ["Team", "Work", "Play", "Family"],
-      onTap: (p0) {},
-      childBuilder: (tab, index, selected) {
-        return Text(
-          tab,
-          style: TextStyle(
-            color: selected ? Colors.orange : Colors.black,
-            fontSize: 20,
-          ),
-        );
-      },
-      initialTabIndex: 0,
-    );
-  }
-}
-
-class SegmentedTabs<T> extends StatefulWidget {
+class SegmentedButton<T> extends StatefulWidget {
   final List<T> tabs;
   final Widget Function(T tab, int index, bool selected) childBuilder;
   final void Function(T) onTap;
@@ -35,7 +13,7 @@ class SegmentedTabs<T> extends StatefulWidget {
   final SegmentedTagsStyle? style;
   final double? height;
 
-  const SegmentedTabs({
+  const SegmentedButton({
     super.key,
     required this.tabs,
     required this.childBuilder,
@@ -52,10 +30,10 @@ class SegmentedTabs<T> extends StatefulWidget {
   }
 
   @override
-  State<SegmentedTabs<T>> createState() => _SegmentedTabsState<T>();
+  State<SegmentedButton<T>> createState() => _SegmentedButtonState<T>();
 }
 
-class _SegmentedTabsState<T> extends State<SegmentedTabs<T>> {
+class _SegmentedButtonState<T> extends State<SegmentedButton<T>> {
   int selectedTabIndex = 0;
 
   @override
@@ -67,7 +45,7 @@ class _SegmentedTabsState<T> extends State<SegmentedTabs<T>> {
   @override
   Widget build(BuildContext context) {
     return MyCustomMultiChildLayout(
-        delegate: SegmentedTabsDelegate(
+        delegate: SegmentedButtonDelegate(
           widget.tabs,
           height: widget.height,
         ),
@@ -131,10 +109,10 @@ class MyCustomMultiChildLayout extends MultiChildRenderObjectWidget {
   }
 }
 
-class SegmentedTabsDelegate<T> extends CustomMultiChildLayoutDelegate {
+class SegmentedButtonDelegate<T> extends CustomMultiChildLayoutDelegate {
   final List<T> tabs;
   final double? height;
-  SegmentedTabsDelegate(this.tabs, {this.height});
+  SegmentedButtonDelegate(this.tabs, {this.height});
 
   double get minHeight => height ?? 40;
 
@@ -156,11 +134,6 @@ class SegmentedTabsDelegate<T> extends CustomMultiChildLayoutDelegate {
       offset = Offset(offset.dx + size.width, offset.dy);
       width += size.width;
     }
-  }
-
-  @override
-  bool shouldRelayout(covariant CustomMultiChildLayoutDelegate oldDelegate) {
-    return true;
   }
 }
 
@@ -545,6 +518,7 @@ class RenderCustomMultiChildLayoutBox extends RenderBox
   /// The delegate that controls the layout of the children.
   CustomMultiChildLayoutDelegate get delegate => _delegate;
   CustomMultiChildLayoutDelegate _delegate;
+
   set delegate(CustomMultiChildLayoutDelegate newDelegate) {
     if (_delegate == newDelegate) {
       return;
