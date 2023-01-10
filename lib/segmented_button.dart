@@ -11,7 +11,7 @@ class SegmentedButton<T> extends StatefulWidget {
   final T? initialSelectedTab;
   final int? initialTabIndex;
   final SegmentedTagsStyle? style;
-  final double? height;
+  final double height;
 
   const SegmentedButton({
     super.key,
@@ -20,7 +20,7 @@ class SegmentedButton<T> extends StatefulWidget {
     required this.onTap,
     this.initialSelectedTab,
     this.initialTabIndex,
-    this.height,
+    this.height = 40,
     this.style,
   });
 
@@ -67,7 +67,7 @@ class _SegmentedButtonState<T> extends State<SegmentedButton<T>> {
                         const SegmentedTagsStyle.withColoredBorders(),
                   ),
                   child: Container(
-                    height: widget.height ?? 40,
+                    height: widget.height,
                     padding: EdgeInsets.symmetric(
                         horizontal: widget.style?.horizontalPadding ?? 15),
                     child: Center(
@@ -85,9 +85,6 @@ class _SegmentedButtonState<T> extends State<SegmentedButton<T>> {
 }
 
 class SizedCustomMultiChildLayout extends MultiChildRenderObjectWidget {
-  /// Creates a custom multi-child layout.
-  ///
-  /// The [delegate] argument must not be null.
   SizedCustomMultiChildLayout({
     super.key,
     required this.delegate,
@@ -111,23 +108,21 @@ class SizedCustomMultiChildLayout extends MultiChildRenderObjectWidget {
 
 class SegmentedButtonDelegate<T> extends CustomMultiChildLayoutDelegate {
   final List<T> tabs;
-  final double? height;
-  SegmentedButtonDelegate(this.tabs, {this.height});
-
-  double get maxHeight => height ?? 40;
+  final double height;
+  SegmentedButtonDelegate(this.tabs, {required this.height});
 
   @override
   Size performLayout() {
     var buttonSize = Size.zero;
     var offset = Offset.zero;
-    final constraints = BoxConstraints(minHeight: maxHeight);
+    final constraints = BoxConstraints.tightFor(height: height);
 
     for (var tab in tabs) {
       if (hasChild(ValueKey(tab))) {
         final size = layoutChild(ValueKey(tab), constraints);
         positionChild(ValueKey(tab), offset);
         offset = Offset(offset.dx + size.width, offset.dy);
-        buttonSize = Size(buttonSize.width + size.width, maxHeight);
+        buttonSize = Size(buttonSize.width + size.width, height);
       }
     }
     return buttonSize;
@@ -520,7 +515,7 @@ class RenderCustomMultiChildLayoutBox extends RenderBox
     if (_delegate == newDelegate) {
       return;
     }
-    final CustomMultiChildLayoutDelegate oldDelegate = _delegate;
+    final oldDelegate = _delegate;
     if (newDelegate.runtimeType != oldDelegate.runtimeType ||
         newDelegate.shouldRelayout(oldDelegate)) {
       markNeedsLayout();
@@ -545,7 +540,10 @@ class RenderCustomMultiChildLayoutBox extends RenderBox
   }
 
   @override
-  void performLayout() => size = delegate._callPerformLayout(firstChild);
+  void performLayout() {
+    // sets the size of the whole widget after laying out every widget
+    size = delegate._callPerformLayout(firstChild);
+  }
 
   @override
   void paint(PaintingContext context, Offset offset) {
