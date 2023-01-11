@@ -43,6 +43,7 @@ class HomePage extends StatelessWidget {
                 );
               },
               initialTabIndex: 0,
+              type: ButtonType.filled,
             )
           ],
         ),
