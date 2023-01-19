@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import 'segmented_button.dart';
+import 'style.dart';
 
 class BoxPainter extends CustomPainter {
   final int index;

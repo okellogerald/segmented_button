@@ -27,8 +27,13 @@ class ChildrenControlledLayout extends MultiChildRenderObjectWidget {
 class ChildrenControlledLayoutDelegate<T>
     extends CustomMultiChildLayoutDelegate {
   final List<T> tabs;
+  final List<Key> keys;
   final double height;
-  ChildrenControlledLayoutDelegate(this.tabs, {required this.height});
+  ChildrenControlledLayoutDelegate({
+    required this.height,
+    required this.keys,
+    required this.tabs,
+  });
 
   @override
   Size performLayout() {
@@ -36,10 +41,12 @@ class ChildrenControlledLayoutDelegate<T>
     var offset = Offset.zero;
     final constraints = BoxConstraints.tightFor(height: height);
 
-    for (var tab in tabs) {
-      if (hasChild(ValueKey(tab))) {
-        final size = layoutChild(ValueKey(tab), constraints);
-        positionChild(ValueKey(tab), offset);
+    for (var i = 0; i < tabs.length; i++) {
+      final tab = tabs[i];
+      final key = keys[i];
+      if (hasChild(key)) {
+        final size = layoutChild(key, constraints);
+        positionChild(key, offset);
         offset = Offset(offset.dx + size.width, offset.dy);
         buttonSize = Size(buttonSize.width + size.width, height);
       }
