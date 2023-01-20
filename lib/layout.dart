@@ -42,7 +42,6 @@ class ChildrenControlledLayoutDelegate<T>
     final constraints = BoxConstraints.tightFor(height: height);
 
     for (var i = 0; i < tabs.length; i++) {
-      final tab = tabs[i];
       final key = keys[i];
       if (hasChild(key)) {
         final size = layoutChild(key, constraints);
